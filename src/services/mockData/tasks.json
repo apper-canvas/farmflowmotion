@@ -1,0 +1,57 @@
+[
+  {
+    "Id": 1,
+    "farmId": "1",
+    "cropId": "1",
+    "title": "Water corn field",
+    "description": "Check irrigation system and ensure adequate water coverage",
+    "dueDate": "2024-12-20T09:00:00.000Z",
+    "priority": "high",
+    "completed": false,
+    "completedAt": null
+  },
+  {
+    "Id": 2,
+    "farmId": "1",
+    "cropId": "2",
+    "title": "Apply fertilizer to soybeans",
+    "description": "Apply nitrogen fertilizer to soybean fields",
+    "dueDate": "2024-12-22T08:00:00.000Z",
+    "priority": "medium",
+    "completed": false,
+    "completedAt": null
+  },
+  {
+    "Id": 3,
+    "farmId": "2",
+    "cropId": "3",
+    "title": "Harvest wheat",
+    "description": "Begin wheat harvest - weather looks good",
+    "dueDate": "2024-12-18T06:00:00.000Z",
+    "priority": "high",
+    "completed": true,
+    "completedAt": "2024-12-18T14:30:00.000Z"
+  },
+  {
+    "Id": 4,
+    "farmId": "3",
+    "cropId": null,
+    "title": "Equipment maintenance",
+    "description": "Service tractor and check all equipment before busy season",
+    "dueDate": "2024-12-25T10:00:00.000Z",
+    "priority": "medium",
+    "completed": false,
+    "completedAt": null
+  },
+  {
+    "Id": 5,
+    "farmId": "2",
+    "cropId": "5",
+    "title": "Check barley growth",
+    "description": "Monitor barley field for any signs of disease or pests",
+    "dueDate": "2024-12-19T11:00:00.000Z",
+    "priority": "low",
+    "completed": false,
+    "completedAt": null
+  }
+]

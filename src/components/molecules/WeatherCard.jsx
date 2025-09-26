@@ -24,8 +24,15 @@ const WeatherCard = ({ weather, forecast }) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {weather && (
+{weather && (
           <div className="mb-6">
+            {/* Weather Summary Section */}
+            {weather.summary && (
+              <div className="mb-4 p-3 bg-gradient-to-r from-blue-100 to-blue-50 rounded-lg border border-blue-200">
+                <h4 className="text-sm font-semibold text-blue-800 mb-1">Weather Summary</h4>
+                <p className="text-blue-700 text-sm leading-relaxed">{weather.summary}</p>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-3xl font-bold text-blue-900">{weather.temperature}°</p>

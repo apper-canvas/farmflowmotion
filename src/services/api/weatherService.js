@@ -39,11 +39,30 @@ class WeatherService {
       return 'Sun'; // default
     };
 
+// Generate comprehensive weather summary
+    const generateSummary = (temp, condition) => {
+      const tempDesc = temp >= 75 ? 'warm' : temp >= 60 ? 'comfortable' : temp >= 45 ? 'cool' : 'cold';
+      const conditionLower = condition.toLowerCase();
+      
+      if (conditionLower.includes('sunny') || conditionLower.includes('clear')) {
+        return `Pleasant ${condition.toLowerCase()} day with ${tempDesc} temperatures`;
+      } else if (conditionLower.includes('cloud')) {
+        return `${condition} conditions with ${tempDesc} temperatures and light winds`;
+      } else if (conditionLower.includes('rain')) {
+        return `${condition} weather with ${tempDesc} temperatures - good day for indoor activities`;
+      } else if (conditionLower.includes('storm')) {
+        return `${condition} conditions with ${tempDesc} temperatures - stay indoors and safe`;
+      } else {
+        return `${condition} weather with ${tempDesc} temperatures`;
+      }
+    };
+
     return {
       temperature: current.temperature,
       condition: current.condition,
       icon: getWeatherIcon(current.condition),
-      location: location
+      location: location,
+      summary: generateSummary(current.temperature, current.condition)
     };
   }
 

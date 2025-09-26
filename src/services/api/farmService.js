@@ -22,9 +22,10 @@ class FarmService {
   async create(farmData) {
     await this.delay();
     const newFarm = {
-      ...farmData,
+...farmData,
       Id: Math.max(...this.farms.map(f => f.Id), 0) + 1,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      weatherSummary: farmData.weatherSummary || ""
     };
     this.farms.push(newFarm);
     return { ...newFarm };
@@ -38,9 +39,10 @@ class FarmService {
     }
     
     this.farms[index] = {
-      ...this.farms[index],
+...this.farms[index],
       ...farmData,
-      Id: parseInt(id)
+      Id: parseInt(id),
+      weatherSummary: farmData.weatherSummary || ""
     };
     
     return { ...this.farms[index] };

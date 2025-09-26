@@ -6,11 +6,12 @@ import ApperIcon from "@/components/ApperIcon";
 import { toast } from "react-toastify";
 
 const FarmForm = ({ farm, onSubmit, onCancel, isEdit = false }) => {
-  const [formData, setFormData] = useState({
+const [formData, setFormData] = useState({
     name: "",
     location: "",
     size: "",
-    soilType: "loam"
+    soilType: "loam",
+    weatherSummary: ""
   });
 
   const [errors, setErrors] = useState({});
@@ -21,7 +22,8 @@ const FarmForm = ({ farm, onSubmit, onCancel, isEdit = false }) => {
         name: farm.name || "",
         location: farm.location || "",
         size: farm.size?.toString() || "",
-        soilType: farm.soilType || "loam"
+soilType: farm.soilType || "loam",
+        weatherSummary: farm.weatherSummary || ""
       });
     }
   }, [farm, isEdit]);
@@ -53,12 +55,12 @@ const FarmForm = ({ farm, onSubmit, onCancel, isEdit = false }) => {
       return;
     }
 
-    const farmData = {
+const farmData = {
       ...formData,
       size: parseFloat(formData.size),
+      weatherSummary: formData.weatherSummary.trim(),
       ...(isEdit ? { Id: farm.Id } : {})
     };
-
     onSubmit(farmData);
   };
 
@@ -124,6 +126,21 @@ const FarmForm = ({ farm, onSubmit, onCancel, isEdit = false }) => {
             <option value="silt">Silt</option>
             <option value="rocky">Rocky</option>
             <option value="peat">Peat</option>
+</FormField>
+
+          <FormField
+            label="Weather Summary"
+            error={errors.weatherSummary}
+            icon="CloudRain"
+            optional
+          >
+            <textarea
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 resize-none"
+              rows={3}
+              placeholder="Add weather information or conditions..."
+              value={formData.weatherSummary}
+              onChange={(e) => handleChange('weatherSummary')(e.target.value)}
+            />
           </FormField>
         </CardContent>
 

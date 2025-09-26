@@ -18,8 +18,8 @@ const FormField = ({
     }
 
     switch (type) {
-      case "select":
-        return <Select {...props} />;
+case "select":
+        return <Select {...props} placeholder={props.placeholder} />;
       case "textarea":
         return <Textarea {...props} />;
       default:

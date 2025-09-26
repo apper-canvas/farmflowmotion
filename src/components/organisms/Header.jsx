@@ -7,10 +7,11 @@ const Header = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navigation = [
+const navigation = [
     { name: "Dashboard", href: "/", icon: "LayoutDashboard" },
     { name: "Farms", href: "/farms", icon: "MapPin" },
     { name: "Crops", href: "/crops", icon: "Wheat" },
+    { name: "Rotation", href: "/rotation", icon: "RotateCcw" },
     { name: "Tasks", href: "/tasks", icon: "CheckSquare" },
     { name: "Weather", href: "/weather", icon: "CloudSun" },
     { name: "Finances", href: "/finances", icon: "DollarSign" }

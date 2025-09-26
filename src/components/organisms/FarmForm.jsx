@@ -137,9 +137,9 @@ const farmData = {
             <textarea
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 resize-none"
               rows={3}
-              placeholder="Add weather information or conditions..."
+placeholder="Add weather information or conditions..."
               value={formData.weatherSummary}
-              onChange={(e) => handleChange('weatherSummary')(e.target.value)}
+              onChange={handleChange('weatherSummary')}
             />
           </FormField>
         </CardContent>

@@ -5,12 +5,24 @@ import FormField from "@/components/molecules/FormField";
 import ApperIcon from "@/components/ApperIcon";
 import { toast } from "react-toastify";
 
-// Initialize Apper SDK
-const { ApperClient } = window.ApperSDK;
-const apperClient = new ApperClient({
-  apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
-  apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
-});
+// Initialize Apper SDK safely
+let apperClient = null;
+
+// Safe SDK initialization
+const initializeApperSDK = () => {
+  try {
+    if (window.ApperSDK?.ApperClient) {
+      apperClient = new window.ApperSDK.ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+      return true;
+    }
+  } catch (error) {
+    console.error('Failed to initialize Apper SDK:', error);
+  }
+  return false;
+};
 const FarmForm = ({ farm, onSubmit, onCancel, isEdit = false }) => {
 const [formData, setFormData] = useState({
     name: "",
@@ -82,6 +94,12 @@ const farmData = {
 const handleGenerateWeather = async () => {
     if (!formData.location.trim()) {
       toast.error('Please enter a location first');
+      return;
+    }
+
+    // Initialize SDK if not already done
+    if (!apperClient && !initializeApperSDK()) {
+      toast.error('AI features are currently unavailable. Please try again later.');
       return;
     }
 
@@ -182,13 +200,14 @@ const handleGenerateWeather = async () => {
                 value={formData.weatherSummary}
                 onChange={handleChange('weatherSummary')}
               />
-              <Button
+<Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleGenerateWeather}
                 disabled={isGeneratingWeather || !formData.location.trim()}
                 className="flex items-center gap-2"
+                title={!window.ApperSDK ? 'AI features loading...' : ''}
               >
                 <ApperIcon name={isGeneratingWeather ? "Loader2" : "Sparkles"} size={16} className={isGeneratingWeather ? "animate-spin" : ""} />
                 {isGeneratingWeather ? 'Generating...' : 'Generate AI'}

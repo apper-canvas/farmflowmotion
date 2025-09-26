@@ -34,6 +34,14 @@ const FarmGrid = ({ farms, onEdit, onDelete, onViewDetails }) => {
                   Added {new Date(farm.createdAt).toLocaleDateString()}
                 </span>
               </div>
+              {farm.weatherSummary && (
+                <div className="flex items-center gap-2 text-gray-600 pt-2 border-t border-gray-100">
+                  <ApperIcon name={farm.weatherSummary.icon} size={14} className="text-blue-500" />
+                  <span className="text-sm font-medium">
+                    {farm.weatherSummary.temperature}°F - {farm.weatherSummary.condition}
+                  </span>
+                </div>
+              )}
             </div>
             
             <div className="flex gap-2 pt-2">

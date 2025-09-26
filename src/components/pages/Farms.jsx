@@ -8,6 +8,7 @@ import Loading from "@/components/ui/Loading";
 import Error from "@/components/ui/Error";
 import Empty from "@/components/ui/Empty";
 import farmService from "@/services/api/farmService";
+import weatherService from "@/services/api/weatherService";
 import { toast } from "react-toastify";
 import { useModal } from "@/hooks/useModal";
 
@@ -21,13 +22,26 @@ const Farms = () => {
   const addModal = useModal();
   const editModal = useModal();
 
-  const loadFarms = async () => {
+const loadFarms = async () => {
     try {
       setError("");
       setLoading(true);
       const data = await farmService.getAll();
-      setFarms(data);
-      setFilteredFarms(data);
+      
+      // Fetch weather data for each farm
+      const farmsWithWeather = await Promise.all(
+        data.map(async (farm) => {
+          try {
+            const weatherSummary = await weatherService.getWeatherSummary(farm.location);
+            return { ...farm, weatherSummary };
+          } catch (error) {
+            return { ...farm, weatherSummary: null };
+          }
+        })
+      );
+      
+      setFarms(farmsWithWeather);
+      setFilteredFarms(farmsWithWeather);
     } catch (err) {
       setError("Failed to load farms. Please try again.");
     } finally {

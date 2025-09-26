@@ -17,9 +17,9 @@ const FormField = ({
       return children;
     }
 
-    switch (type) {
-case "select":
-        return <Select {...props} placeholder={props.placeholder}>{children}</Select>;
+switch (type) {
+      case "select":
+        return <Select {...props}>{children}</Select>;
       case "textarea":
         return <Textarea {...props} />;
       default:

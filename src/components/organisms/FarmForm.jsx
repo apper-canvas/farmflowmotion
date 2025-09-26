@@ -5,6 +5,12 @@ import FormField from "@/components/molecules/FormField";
 import ApperIcon from "@/components/ApperIcon";
 import { toast } from "react-toastify";
 
+// Initialize Apper SDK
+const { ApperClient } = window.ApperSDK;
+const apperClient = new ApperClient({
+  apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+  apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+});
 const FarmForm = ({ farm, onSubmit, onCancel, isEdit = false }) => {
 const [formData, setFormData] = useState({
     name: "",
@@ -13,6 +19,7 @@ const [formData, setFormData] = useState({
     soilType: "loam",
     weatherSummary: ""
   });
+  const [isGeneratingWeather, setIsGeneratingWeather] = useState(false);
 
   const [errors, setErrors] = useState({});
 
@@ -72,7 +79,40 @@ const farmData = {
       setErrors(prev => ({ ...prev, [field]: "" }));
     }
   };
+const handleGenerateWeather = async () => {
+    if (!formData.location.trim()) {
+      toast.error('Please enter a location first');
+      return;
+    }
 
+    setIsGeneratingWeather(true);
+    try {
+      const result = await apperClient.functions.invoke(import.meta.env.VITE_WEATHER_AI_GENERATION, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ location: formData.location })
+      });
+
+      const response = await result.json();
+      
+      if (response.success) {
+        setFormData(prev => ({
+          ...prev,
+          weatherSummary: response.data.weatherSummary
+        }));
+        toast.success('Weather summary generated successfully!');
+      } else {
+        toast.error(response.error || 'Failed to generate weather summary');
+      }
+    } catch (error) {
+      toast.error('Failed to generate weather summary');
+      console.error('Weather generation error:', error);
+    } finally {
+      setIsGeneratingWeather(false);
+    }
+  };
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
@@ -128,19 +168,32 @@ const farmData = {
             <option value="peat">Peat</option>
 </FormField>
 
-          <FormField
+<FormField
             label="Weather Summary"
             error={errors.weatherSummary}
             icon="CloudRain"
             optional
           >
-            <textarea
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 resize-none"
-              rows={3}
-placeholder="Add weather information or conditions..."
-              value={formData.weatherSummary}
-              onChange={handleChange('weatherSummary')}
-            />
+            <div className="space-y-3">
+              <textarea
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 resize-none"
+                rows={3}
+                placeholder="Add weather information or conditions..."
+                value={formData.weatherSummary}
+                onChange={handleChange('weatherSummary')}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateWeather}
+                disabled={isGeneratingWeather || !formData.location.trim()}
+                className="flex items-center gap-2"
+              >
+                <ApperIcon name={isGeneratingWeather ? "Loader2" : "Sparkles"} size={16} className={isGeneratingWeather ? "animate-spin" : ""} />
+                {isGeneratingWeather ? 'Generating...' : 'Generate AI'}
+              </Button>
+            </div>
           </FormField>
         </CardContent>
 

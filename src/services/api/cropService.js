@@ -1,98 +1,254 @@
-import cropsData from "@/services/mockData/crops.json";
-import farmService from "@/services/api/farmService";
-
 class CropService {
   constructor() {
-    this.crops = [...cropsData];
+    this.tableName = 'crop_c';
+    this.apperClient = null;
+    this.initializeClient();
+  }
+
+  initializeClient() {
+    if (typeof window !== 'undefined' && window.ApperSDK) {
+      const { ApperClient } = window.ApperSDK;
+      this.apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+    }
   }
 
   async getAll() {
-    await this.delay();
-    const farms = await farmService.getAll();
-    const farmMap = farms.reduce((acc, farm) => {
-      acc[farm.Id] = farm;
-      return acc;
-    }, {});
-
-    return this.crops.map(crop => ({
-      ...crop,
-      farmName: farmMap[crop.farmId]?.name || "Unknown Farm"
-    }));
+    if (!this.apperClient) this.initializeClient();
+    
+    try {
+      const params = {
+        fields: [
+          {"field": {"Name": "Id"}},
+          {"field": {"Name": "name_c"}},
+          {"field": {"Name": "variety_c"}},
+          {"field": {"Name": "planting_date_c"}},
+          {"field": {"Name": "expected_harvest_c"}},
+          {"field": {"Name": "area_c"}},
+          {"field": {"Name": "status_c"}},
+          {"field": {"Name": "farm_id_c"}}
+        ]
+      };
+      
+      const response = await this.apperClient.fetchRecords(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        return [];
+      }
+      
+      return response.data.map(crop => ({
+        Id: crop.Id,
+        name: crop.name_c || '',
+        variety: crop.variety_c || '',
+        plantingDate: crop.planting_date_c,
+        expectedHarvest: crop.expected_harvest_c,
+        area: crop.area_c || 0,
+        status: crop.status_c || 'planted',
+        farmId: crop.farm_id_c?.Id?.toString() || '',
+        farmName: crop.farm_id_c?.Name || 'Unknown Farm'
+      }));
+    } catch (error) {
+      console.error("Error fetching crops:", error);
+      return [];
+    }
   }
 
   async getById(id) {
-    await this.delay();
-    const crop = this.crops.find(c => c.Id === parseInt(id));
-    if (!crop) {
-      throw new Error(`Crop with ID ${id} not found`);
+    if (!this.apperClient) this.initializeClient();
+    
+    try {
+      const params = {
+        fields: [
+          {"field": {"Name": "Id"}},
+          {"field": {"Name": "name_c"}},
+          {"field": {"Name": "variety_c"}},
+          {"field": {"Name": "planting_date_c"}},
+          {"field": {"Name": "expected_harvest_c"}},
+          {"field": {"Name": "area_c"}},
+          {"field": {"Name": "status_c"}},
+          {"field": {"Name": "farm_id_c"}}
+        ]
+      };
+      
+      const response = await this.apperClient.getRecordById(this.tableName, id, params);
+      
+      if (!response?.data) {
+        throw new Error(`Crop with ID ${id} not found`);
+      }
+      
+      return {
+        Id: response.data.Id,
+        name: response.data.name_c || '',
+        variety: response.data.variety_c || '',
+        plantingDate: response.data.planting_date_c,
+        expectedHarvest: response.data.expected_harvest_c,
+        area: response.data.area_c || 0,
+        status: response.data.status_c || 'planted',
+        farmId: response.data.farm_id_c?.Id?.toString() || '',
+        farmName: response.data.farm_id_c?.Name || 'Unknown Farm'
+      };
+    } catch (error) {
+      console.error(`Error fetching crop ${id}:`, error);
+      throw error;
     }
-    
-    const farms = await farmService.getAll();
-    const farm = farms.find(f => f.Id === parseInt(crop.farmId));
-    
-    return {
-      ...crop,
-      farmName: farm?.name || "Unknown Farm"
-    };
   }
 
   async getByFarmId(farmId) {
-    await this.delay();
-    return this.crops.filter(c => c.farmId === farmId.toString());
+    if (!this.apperClient) this.initializeClient();
+    
+    try {
+      const params = {
+        fields: [
+          {"field": {"Name": "Id"}},
+          {"field": {"Name": "name_c"}},
+          {"field": {"Name": "variety_c"}},
+          {"field": {"Name": "planting_date_c"}},
+          {"field": {"Name": "expected_harvest_c"}},
+          {"field": {"Name": "area_c"}},
+          {"field": {"Name": "status_c"}},
+          {"field": {"Name": "farm_id_c"}}
+        ],
+        where: [{"FieldName": "farm_id_c", "Operator": "EqualTo", "Values": [parseInt(farmId)]}]
+      };
+      
+      const response = await this.apperClient.fetchRecords(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        return [];
+      }
+      
+      return response.data.map(crop => ({
+        Id: crop.Id,
+        name: crop.name_c || '',
+        variety: crop.variety_c || '',
+        plantingDate: crop.planting_date_c,
+        expectedHarvest: crop.expected_harvest_c,
+        area: crop.area_c || 0,
+        status: crop.status_c || 'planted',
+        farmId: crop.farm_id_c?.Id?.toString() || '',
+        farmName: crop.farm_id_c?.Name || 'Unknown Farm'
+      }));
+    } catch (error) {
+      console.error("Error fetching crops by farm:", error);
+      return [];
+    }
   }
 
   async create(cropData) {
-    await this.delay();
-    const newCrop = {
-      ...cropData,
-      Id: Math.max(...this.crops.map(c => c.Id), 0) + 1
-    };
-    this.crops.push(newCrop);
+    if (!this.apperClient) this.initializeClient();
     
-    const farms = await farmService.getAll();
-    const farm = farms.find(f => f.Id === parseInt(newCrop.farmId));
-    
-    return {
-      ...newCrop,
-      farmName: farm?.name || "Unknown Farm"
-    };
+    try {
+      const params = {
+        records: [{
+          name_c: cropData.name || '',
+          variety_c: cropData.variety || '',
+          planting_date_c: cropData.plantingDate,
+          expected_harvest_c: cropData.expectedHarvest,
+          area_c: parseFloat(cropData.area) || 0,
+          status_c: cropData.status || 'planted',
+          farm_id_c: parseInt(cropData.farmId)
+        }]
+      };
+      
+      const response = await this.apperClient.createRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      const createdRecord = response.results?.[0]?.data;
+      if (createdRecord) {
+        return {
+          Id: createdRecord.Id,
+          name: createdRecord.name_c || '',
+          variety: createdRecord.variety_c || '',
+          plantingDate: createdRecord.planting_date_c,
+          expectedHarvest: createdRecord.expected_harvest_c,
+          area: createdRecord.area_c || 0,
+          status: createdRecord.status_c || 'planted',
+          farmId: createdRecord.farm_id_c?.Id?.toString() || '',
+          farmName: createdRecord.farm_id_c?.Name || 'Unknown Farm'
+        };
+      }
+      
+      throw new Error("Failed to create crop");
+    } catch (error) {
+      console.error("Error creating crop:", error);
+      throw error;
+    }
   }
 
   async update(id, cropData) {
-    await this.delay();
-    const index = this.crops.findIndex(c => c.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error(`Crop with ID ${id} not found`);
+    if (!this.apperClient) this.initializeClient();
+    
+    try {
+      const params = {
+        records: [{
+          Id: parseInt(id),
+          name_c: cropData.name || '',
+          variety_c: cropData.variety || '',
+          planting_date_c: cropData.plantingDate,
+          expected_harvest_c: cropData.expectedHarvest,
+          area_c: parseFloat(cropData.area) || 0,
+          status_c: cropData.status || 'planted',
+          farm_id_c: parseInt(cropData.farmId)
+        }]
+      };
+      
+      const response = await this.apperClient.updateRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      const updatedRecord = response.results?.[0]?.data;
+      if (updatedRecord) {
+        return {
+          Id: updatedRecord.Id,
+          name: updatedRecord.name_c || '',
+          variety: updatedRecord.variety_c || '',
+          plantingDate: updatedRecord.planting_date_c,
+          expectedHarvest: updatedRecord.expected_harvest_c,
+          area: updatedRecord.area_c || 0,
+          status: updatedRecord.status_c || 'planted',
+          farmId: updatedRecord.farm_id_c?.Id?.toString() || '',
+          farmName: updatedRecord.farm_id_c?.Name || 'Unknown Farm'
+        };
+      }
+      
+      throw new Error("Failed to update crop");
+    } catch (error) {
+      console.error("Error updating crop:", error);
+      throw error;
     }
-    
-    this.crops[index] = {
-      ...this.crops[index],
-      ...cropData,
-      Id: parseInt(id)
-    };
-    
-    const farms = await farmService.getAll();
-    const farm = farms.find(f => f.Id === parseInt(this.crops[index].farmId));
-    
-    return {
-      ...this.crops[index],
-      farmName: farm?.name || "Unknown Farm"
-    };
   }
 
   async delete(id) {
-    await this.delay();
-    const index = this.crops.findIndex(c => c.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error(`Crop with ID ${id} not found`);
-    }
+    if (!this.apperClient) this.initializeClient();
     
-    this.crops.splice(index, 1);
-    return true;
-  }
-
-  delay() {
-    return new Promise(resolve => setTimeout(resolve, 300));
+    try {
+      const params = { 
+        RecordIds: [parseInt(id)]
+      };
+      
+      const response = await this.apperClient.deleteRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      return response.results?.[0]?.success || false;
+    } catch (error) {
+      console.error("Error deleting crop:", error);
+      throw error;
+    }
   }
 }
 

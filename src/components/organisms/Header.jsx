@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
-
+import { AuthContext } from "@/contexts/AuthContext";
 const Header = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -52,44 +52,61 @@ const navigation = [
             ))}
           </nav>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-white hover:bg-white/10"
-            >
-              <ApperIcon name={mobileMenuOpen ? "X" : "Menu"} size={20} />
-            </Button>
+{/* Mobile menu button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden text-white hover:text-primary-100"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <ApperIcon name="Menu" size={20} />
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden">
+          <div className="px-2 pt-2 pb-3 space-y-1 bg-primary-700/95 backdrop-blur border-t border-primary-400">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
+                  isActive(item.href)
+                    ? "bg-white/20 text-white shadow-lg"
+                    : "text-primary-100 hover:text-white hover:bg-white/10"
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <ApperIcon name={item.icon} size={16} />
+                {item.name}
+              </Link>
+            ))}
+            <div className="px-3 py-2">
+              <LogoutButton />
+            </div>
           </div>
         </div>
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden pb-4">
-            <nav className="space-y-1">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isActive(item.href)
-                      ? "bg-white/20 text-white shadow-lg backdrop-blur"
-                      : "text-primary-100 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  <ApperIcon name={item.icon} size={16} />
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        )}
-      </div>
+      )}
     </header>
   );
 };
+
+function LogoutButton() {
+  const { logout } = useContext(AuthContext);
+  
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={logout}
+      className="text-primary-100 border-primary-100 hover:bg-white/10 hover:text-white"
+    >
+      <ApperIcon name="LogOut" size={16} className="mr-2" />
+      Logout
+    </Button>
+  );
+}
 
 export default Header;

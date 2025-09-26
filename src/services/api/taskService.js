@@ -1,149 +1,288 @@
-import tasksData from "@/services/mockData/tasks.json";
-import farmService from "@/services/api/farmService";
-import cropService from "@/services/api/cropService";
-
 class TaskService {
   constructor() {
-    this.tasks = [...tasksData];
+    this.tableName = 'task_c';
+    this.apperClient = null;
+    this.initializeClient();
+  }
+
+  initializeClient() {
+    if (typeof window !== 'undefined' && window.ApperSDK) {
+      const { ApperClient } = window.ApperSDK;
+      this.apperClient = new ApperClient({
+        apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+        apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+      });
+    }
   }
 
   async getAll() {
-    await this.delay();
-    const farms = await farmService.getAll();
-    const crops = await cropService.getAll();
+    if (!this.apperClient) this.initializeClient();
     
-    const farmMap = farms.reduce((acc, farm) => {
-      acc[farm.Id] = farm;
-      return acc;
-    }, {});
-
-    const cropMap = crops.reduce((acc, crop) => {
-      acc[crop.Id] = crop;
-      return acc;
-    }, {});
-
-    return this.tasks.map(task => ({
-      ...task,
-      farmName: farmMap[task.farmId]?.name || "Unknown Farm",
-      cropName: task.cropId ? (cropMap[task.cropId]?.name || "Unknown Crop") : null
-    }));
+    try {
+      const params = {
+        fields: [
+          {"field": {"Name": "Id"}},
+          {"field": {"Name": "title_c"}},
+          {"field": {"Name": "description_c"}},
+          {"field": {"Name": "due_date_c"}},
+          {"field": {"Name": "priority_c"}},
+          {"field": {"Name": "completed_c"}},
+          {"field": {"Name": "completed_at_c"}},
+          {"field": {"Name": "farm_id_c"}},
+          {"field": {"Name": "crop_id_c"}}
+        ]
+      };
+      
+      const response = await this.apperClient.fetchRecords(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        return [];
+      }
+      
+      return response.data.map(task => ({
+        Id: task.Id,
+        title: task.title_c || '',
+        description: task.description_c || '',
+        dueDate: task.due_date_c,
+        priority: task.priority_c || 'medium',
+        completed: task.completed_c || false,
+        completedAt: task.completed_at_c,
+        farmId: task.farm_id_c?.Id?.toString() || '',
+        farmName: task.farm_id_c?.Name || 'Unknown Farm',
+        cropId: task.crop_id_c?.Id?.toString() || null,
+        cropName: task.crop_id_c?.Name || null
+      }));
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      return [];
+    }
   }
 
   async getById(id) {
-    await this.delay();
-    const task = this.tasks.find(t => t.Id === parseInt(id));
-    if (!task) {
-      throw new Error(`Task with ID ${id} not found`);
+    if (!this.apperClient) this.initializeClient();
+    
+    try {
+      const params = {
+        fields: [
+          {"field": {"Name": "Id"}},
+          {"field": {"Name": "title_c"}},
+          {"field": {"Name": "description_c"}},
+          {"field": {"Name": "due_date_c"}},
+          {"field": {"Name": "priority_c"}},
+          {"field": {"Name": "completed_c"}},
+          {"field": {"Name": "completed_at_c"}},
+          {"field": {"Name": "farm_id_c"}},
+          {"field": {"Name": "crop_id_c"}}
+        ]
+      };
+      
+      const response = await this.apperClient.getRecordById(this.tableName, id, params);
+      
+      if (!response?.data) {
+        throw new Error(`Task with ID ${id} not found`);
+      }
+      
+      return {
+        Id: response.data.Id,
+        title: response.data.title_c || '',
+        description: response.data.description_c || '',
+        dueDate: response.data.due_date_c,
+        priority: response.data.priority_c || 'medium',
+        completed: response.data.completed_c || false,
+        completedAt: response.data.completed_at_c,
+        farmId: response.data.farm_id_c?.Id?.toString() || '',
+        farmName: response.data.farm_id_c?.Name || 'Unknown Farm',
+        cropId: response.data.crop_id_c?.Id?.toString() || null,
+        cropName: response.data.crop_id_c?.Name || null
+      };
+    } catch (error) {
+      console.error(`Error fetching task ${id}:`, error);
+      throw error;
     }
-    
-    const farms = await farmService.getAll();
-    const crops = await cropService.getAll();
-    const farm = farms.find(f => f.Id === parseInt(task.farmId));
-    const crop = task.cropId ? crops.find(c => c.Id === parseInt(task.cropId)) : null;
-    
-    return {
-      ...task,
-      farmName: farm?.name || "Unknown Farm",
-      cropName: crop?.name || null
-    };
   }
 
   async getUpcoming(limit = 5) {
-    await this.delay();
-    const allTasks = await this.getAll();
-    const upcomingTasks = allTasks
-      .filter(task => !task.completed && new Date(task.dueDate) >= new Date())
-      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-      .slice(0, limit);
+    if (!this.apperClient) this.initializeClient();
     
-    return upcomingTasks;
+    try {
+      const params = {
+        fields: [
+          {"field": {"Name": "Id"}},
+          {"field": {"Name": "title_c"}},
+          {"field": {"Name": "description_c"}},
+          {"field": {"Name": "due_date_c"}},
+          {"field": {"Name": "priority_c"}},
+          {"field": {"Name": "completed_c"}},
+          {"field": {"Name": "completed_at_c"}},
+          {"field": {"Name": "farm_id_c"}},
+          {"field": {"Name": "crop_id_c"}}
+        ],
+        where: [
+          {"FieldName": "completed_c", "Operator": "EqualTo", "Values": [false]},
+          {"FieldName": "due_date_c", "Operator": "GreaterThanOrEqualTo", "Values": [new Date().toISOString()]}
+        ],
+        orderBy: [{"fieldName": "due_date_c", "sorttype": "ASC"}],
+        pagingInfo: {"limit": limit, "offset": 0}
+      };
+      
+      const response = await this.apperClient.fetchRecords(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        return [];
+      }
+      
+      return response.data.map(task => ({
+        Id: task.Id,
+        title: task.title_c || '',
+        description: task.description_c || '',
+        dueDate: task.due_date_c,
+        priority: task.priority_c || 'medium',
+        completed: task.completed_c || false,
+        completedAt: task.completed_at_c,
+        farmId: task.farm_id_c?.Id?.toString() || '',
+        farmName: task.farm_id_c?.Name || 'Unknown Farm',
+        cropId: task.crop_id_c?.Id?.toString() || null,
+        cropName: task.crop_id_c?.Name || null
+      }));
+    } catch (error) {
+      console.error("Error fetching upcoming tasks:", error);
+      return [];
+    }
   }
 
   async create(taskData) {
-    await this.delay();
-    const newTask = {
-      ...taskData,
-      Id: Math.max(...this.tasks.map(t => t.Id), 0) + 1,
-      completed: false,
-      completedAt: null
-    };
-    this.tasks.push(newTask);
+    if (!this.apperClient) this.initializeClient();
     
-    const farms = await farmService.getAll();
-    const crops = await cropService.getAll();
-    const farm = farms.find(f => f.Id === parseInt(newTask.farmId));
-    const crop = newTask.cropId ? crops.find(c => c.Id === parseInt(newTask.cropId)) : null;
-    
-    return {
-      ...newTask,
-      farmName: farm?.name || "Unknown Farm",
-      cropName: crop?.name || null
-    };
+    try {
+      const params = {
+        records: [{
+          title_c: taskData.title || '',
+          description_c: taskData.description || '',
+          due_date_c: taskData.dueDate,
+          priority_c: taskData.priority || 'medium',
+          completed_c: false,
+          completed_at_c: null,
+          farm_id_c: parseInt(taskData.farmId),
+          ...(taskData.cropId ? { crop_id_c: parseInt(taskData.cropId) } : {})
+        }]
+      };
+      
+      const response = await this.apperClient.createRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      const createdRecord = response.results?.[0]?.data;
+      if (createdRecord) {
+        return {
+          Id: createdRecord.Id,
+          title: createdRecord.title_c || '',
+          description: createdRecord.description_c || '',
+          dueDate: createdRecord.due_date_c,
+          priority: createdRecord.priority_c || 'medium',
+          completed: createdRecord.completed_c || false,
+          completedAt: createdRecord.completed_at_c,
+          farmId: createdRecord.farm_id_c?.Id?.toString() || '',
+          farmName: createdRecord.farm_id_c?.Name || 'Unknown Farm',
+          cropId: createdRecord.crop_id_c?.Id?.toString() || null,
+          cropName: createdRecord.crop_id_c?.Name || null
+        };
+      }
+      
+      throw new Error("Failed to create task");
+    } catch (error) {
+      console.error("Error creating task:", error);
+      throw error;
+    }
   }
 
   async update(id, taskData) {
-    await this.delay();
-    const index = this.tasks.findIndex(t => t.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error(`Task with ID ${id} not found`);
+    if (!this.apperClient) this.initializeClient();
+    
+    try {
+      const updateData = {
+        Id: parseInt(id),
+        title_c: taskData.title || '',
+        description_c: taskData.description || '',
+        due_date_c: taskData.dueDate,
+        priority_c: taskData.priority || 'medium',
+        farm_id_c: parseInt(taskData.farmId)
+      };
+      
+      if (taskData.cropId) {
+        updateData.crop_id_c = parseInt(taskData.cropId);
+      }
+      
+      if (taskData.hasOwnProperty('completed')) {
+        updateData.completed_c = taskData.completed;
+        updateData.completed_at_c = taskData.completed ? new Date().toISOString() : null;
+      }
+      
+      const params = { records: [updateData] };
+      
+      const response = await this.apperClient.updateRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      const updatedRecord = response.results?.[0]?.data;
+      if (updatedRecord) {
+        return {
+          Id: updatedRecord.Id,
+          title: updatedRecord.title_c || '',
+          description: updatedRecord.description_c || '',
+          dueDate: updatedRecord.due_date_c,
+          priority: updatedRecord.priority_c || 'medium',
+          completed: updatedRecord.completed_c || false,
+          completedAt: updatedRecord.completed_at_c,
+          farmId: updatedRecord.farm_id_c?.Id?.toString() || '',
+          farmName: updatedRecord.farm_id_c?.Name || 'Unknown Farm',
+          cropId: updatedRecord.crop_id_c?.Id?.toString() || null,
+          cropName: updatedRecord.crop_id_c?.Name || null
+        };
+      }
+      
+      throw new Error("Failed to update task");
+    } catch (error) {
+      console.error("Error updating task:", error);
+      throw error;
     }
-    
-    this.tasks[index] = {
-      ...this.tasks[index],
-      ...taskData,
-      Id: parseInt(id)
-    };
-    
-    const farms = await farmService.getAll();
-    const crops = await cropService.getAll();
-    const farm = farms.find(f => f.Id === parseInt(this.tasks[index].farmId));
-    const crop = this.tasks[index].cropId ? crops.find(c => c.Id === parseInt(this.tasks[index].cropId)) : null;
-    
-    return {
-      ...this.tasks[index],
-      farmName: farm?.name || "Unknown Farm",
-      cropName: crop?.name || null
-    };
   }
 
   async complete(id) {
-    await this.delay();
-    const index = this.tasks.findIndex(t => t.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error(`Task with ID ${id} not found`);
-    }
-    
-    this.tasks[index] = {
-      ...this.tasks[index],
-      completed: !this.tasks[index].completed,
-      completedAt: !this.tasks[index].completed ? null : new Date().toISOString()
-    };
-    
-    const farms = await farmService.getAll();
-    const crops = await cropService.getAll();
-    const farm = farms.find(f => f.Id === parseInt(this.tasks[index].farmId));
-    const crop = this.tasks[index].cropId ? crops.find(c => c.Id === parseInt(this.tasks[index].cropId)) : null;
-    
-    return {
-      ...this.tasks[index],
-      farmName: farm?.name || "Unknown Farm",
-      cropName: crop?.name || null
-    };
+    const currentTask = await this.getById(id);
+    return this.update(id, {
+      ...currentTask,
+      completed: !currentTask.completed
+    });
   }
 
   async delete(id) {
-    await this.delay();
-    const index = this.tasks.findIndex(t => t.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error(`Task with ID ${id} not found`);
-    }
+    if (!this.apperClient) this.initializeClient();
     
-    this.tasks.splice(index, 1);
-    return true;
-  }
-
-  delay() {
-    return new Promise(resolve => setTimeout(resolve, 300));
+    try {
+      const params = { 
+        RecordIds: [parseInt(id)]
+      };
+      
+      const response = await this.apperClient.deleteRecord(this.tableName, params);
+      
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+      
+      return response.results?.[0]?.success || false;
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      throw error;
+    }
   }
 }
 
